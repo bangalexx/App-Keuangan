@@ -2,6 +2,10 @@ package com.banglexx.money.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.Toast;
 
@@ -33,6 +37,8 @@ public class LoginActivity extends BaseActivity {
 
 //        setupTest();
         setupListener();
+        setupEmailWatcher();
+        setupPasswordWatcher();
     }
 
     @Override
@@ -41,39 +47,49 @@ public class LoginActivity extends BaseActivity {
         showProgress(false);
     }
 
-    private void setupTest(){
-        binding.editEmail.setText("irsyad@gmail.com");
+    private void setupTest() {
+        binding.editEmail.setText("lexx@gmail.com");
         binding.editPassword.setText("password");
     }
 
-    private void setupListener(){
+    private void setupListener() {
         binding.buttonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (isRequired()) {
-                    showProgress(true);
-                    api.login(
-                            binding.editEmail.getText().toString(),
-                            binding.editPassword.getText().toString()
-                    ).enqueue(new Callback<LoginResponse>() {
-                        @Override
-                        public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                            showProgress(false);
-                            if (response.isSuccessful()) {
-                                saveLogin( response.body().getData() );
-                                startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-                                finish();
-                            } else {
-                                showMessage(ErrorUtil.getMessage(response));
+                    String email = binding.editEmail.getText().toString();
+                    String password = binding.editPassword.getText().toString();
+
+                    if (!isValidEmail(email)) {
+                        showMessage("Email tidak valid");
+                    } else if (password.length() < 6) {
+                        showMessage("Password harus terdiri dari minimal 6 karakter");
+                    } else {
+                        showProgress(true);
+                        api.login(
+                                email,
+                                password
+                        ).enqueue(new Callback<LoginResponse>() {
+                            @Override
+                            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                                showProgress(false);
+                                if (response.isSuccessful()) {
+                                    saveLogin(response.body().getData());
+                                    startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+                                    finish();
+                                } else {
+                                    showMessage(ErrorUtil.getMessage(response));
+                                }
                             }
-                        }
-                        @Override
-                        public void onFailure(Call<LoginResponse> call, Throwable t) {
-                            showProgress(false);
-                        }
-                    });
+
+                            @Override
+                            public void onFailure(Call<LoginResponse> call, Throwable t) {
+                                showProgress(false);
+                            }
+                        });
+                    }
                 } else {
-                   showMessage("Isi data dengan benar");
+                    showMessage("Isi data dengan benar");
                 }
             }
         });
@@ -86,12 +102,62 @@ public class LoginActivity extends BaseActivity {
         });
     }
 
+    private void setupEmailWatcher() {
+        binding.editEmail.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Tidak perlu melakukan apa pun di sini
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!isValidEmail(s.toString())) {
+                    binding.editEmail.setError("Format email tidak valid");
+                } else {
+                    binding.editEmail.setError(null); // Hapus error jika format email valid
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Tidak perlu melakukan apa pun di sini
+            }
+        });
+    }
+
+    private void setupPasswordWatcher() {
+        binding.editPassword.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Tidak perlu melakukan apa pun di sini
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.length() < 6) {
+                    binding.editPassword.setError("Password harus terdiri dari minimal 6 karakter");
+                } else {
+                    binding.editPassword.setError(null); // Hapus error jika panjang password cukup
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Tidak perlu melakukan apa pun di sini
+            }
+        });
+    }
+
+    private boolean isValidEmail(CharSequence email) {
+        return !TextUtils.isEmpty(email) && Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    }
+
     private Boolean isRequired() {
         return (binding.editEmail.getText() != null && binding.editPassword.getText() != null);
     }
 
     private void showMessage(String message) {
-        Toast.makeText( LoginActivity.this, message, Toast.LENGTH_SHORT ).show();
+        Toast.makeText(LoginActivity.this, message, Toast.LENGTH_SHORT).show();
     }
 
     private void showProgress(Boolean progress) {
@@ -104,12 +170,12 @@ public class LoginActivity extends BaseActivity {
         }
     }
 
-    private void saveLogin(LoginResponse.Data data){
+    private void saveLogin(LoginResponse.Data data) {
         pref.put("pref_is_login", true);
         pref.put("pref_user_id", data.getId());
         pref.put("pref_user_name", data.getName());
         pref.put("pref_user_email", data.getEmail());
         pref.put("pref_user_date", data.getDate());
-        if (pref.getInt("pref_user_avatar") == 0 ) pref.put("pref_user_avatar", R.drawable.avatar2);
+        if (pref.getInt("pref_user_avatar") == 0) pref.put("pref_user_avatar", R.drawable.avatar2);
     }
 }
