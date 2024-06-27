@@ -44,8 +44,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         viewHolder.binding.textDate.setText( data.getDate() );
         viewHolder.binding.textAmount.setText( FormatUtil.number(data.getAmount()) );
 
-        if (data.getType().equals("IN")) viewHolder.binding.imageType.setImageResource(R.drawable.ic_in);
-        else viewHolder.binding.imageType.setImageResource(R.drawable.ic_out);
+        if (data.getType().equals("IN")) viewHolder.binding.imageType.setImageResource(R.drawable.in);
+        else viewHolder.binding.imageType.setImageResource(R.drawable.out);
 
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
